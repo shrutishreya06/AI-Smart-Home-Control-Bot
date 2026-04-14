@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Nova — Smart Home</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inter:wght@300;400;500&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0b0f17;--surface:#111827;--card:#16202e;--border:#1f2f44;
+  --accent:#38bdf8;--on:#34d399;--off:#f87171;--text:#e2eaf5;--muted:#4b6080;
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{background:var(--bg);font-family:'Inter',sans-serif;color:var(--text);min-height:100vh;overflow-x:hidden;}
+body::before{content:'';position:fixed;inset:0;
+  background-image:linear-gradient(var(--border) 1px,transparent 1px),linear-gradient(90deg,var(--border) 1px,transparent 1px);
+  background-size:60px 60px;opacity:.15;pointer-events:none;z-index:0;}
+
+header{position:relative;z-index:10;display:flex;align-items:center;justify-content:space-between;
+  padding:22px 40px;border-bottom:1px solid var(--border);background:rgba(11,15,23,.9);backdrop-filter:blur(16px);}
+.logo{display:flex;align-items:center;gap:14px;}
+.logo-mark{width:40px;height:40px;background:linear-gradient(135deg,#0ea5e9,#6366f1);
+  border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;}
+.brand h1{font-family:'Syne',sans-serif;font-size:20px;font-weight:800;letter-spacing:3px;color:var(--accent);}
+.brand p{font-size:11px;color:var(--muted);letter-spacing:2px;margin-top:1px;}
+.hright{display:flex;align-items:center;gap:16px;}
+.badge-live{display:flex;align-items:center;gap:7px;padding:6px 14px;
+  background:rgba(52,211,153,.07);border:1px solid rgba(52,211,153,.2);
+  border-radius:20px;font-size:11px;color:var(--on);letter-spacing:1.5px;font-family:'Syne',sans-serif;}
+.dot-live{width:7px;height:7px;background:var(--on);border-radius:50%;animation:blink 2s infinite;box-shadow:0 0 6px var(--on);}
+#clock{font-family:'Syne',sans-serif;font-size:13px;color:var(--muted);letter-spacing:2px;}
+
+main{position:relative;z-index:10;padding:36px 40px;max-width:1280px;margin:0 auto;}
+.rl{font-family:'Syne',sans-serif;font-size:10px;letter-spacing:4px;color:var(--muted);
+  display:flex;align-items:center;gap:12px;margin-bottom:28px;}
+.rl::after{content:'';flex:1;height:1px;background:var(--border);}
+
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:40px;}
+.stat{background:var(--surface);border:1px solid var(--border);border-radius:16px;padding:20px 24px;position:relative;overflow:hidden;}
+.stat::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,transparent,var(--accent),transparent);opacity:.4;}
+.stat-n{font-family:'Syne',sans-serif;font-size:40px;font-weight:800;color:var(--accent);line-height:1;}
+.stat-l{font-size:11px;color:var(--muted);letter-spacing:2px;margin-top:6px;}
+
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:20px;}
+
+.device-card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:24px;
+  cursor:pointer;transition:all .3s cubic-bezier(.34,1.56,.64,1);position:relative;overflow:hidden;
+  user-select:none;animation:popIn .5s ease both;}
+.device-card:hover{transform:translateY(-5px);}
+.device-card:active{transform:scale(.97);}
+.device-card.is-on{border-color:rgba(52,211,153,.35);background:linear-gradient(160deg,#0f1e18,#16202e);}
+.device-card.is-on:hover{box-shadow:0 12px 40px rgba(52,211,153,.12);}
+.device-card:not(.is-on):hover{border-color:rgba(56,189,248,.25);box-shadow:0 12px 40px rgba(56,189,248,.08);}
+.device-card.is-on::after{content:'';position:absolute;bottom:-30px;left:50%;transform:translateX(-50%);
+  width:70%;height:60px;background:rgba(52,211,153,.1);filter:blur(24px);border-radius:50%;}
+
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
+.device-name{font-family:'Syne',sans-serif;font-size:14px;font-weight:700;letter-spacing:1.5px;}
+.spill{font-size:10px;letter-spacing:1.5px;padding:4px 10px;border-radius:20px;font-weight:600;transition:all .3s;}
+.is-on .spill{background:rgba(52,211,153,.15);color:var(--on);border:1px solid rgba(52,211,153,.25);}
+.device-card:not(.is-on) .spill{background:rgba(248,113,113,.08);color:var(--off);border:1px solid rgba(248,113,113,.15);}
+
+.illus{height:110px;display:flex;align-items:center;justify-content:center;margin-bottom:20px;position:relative;}
+
+.toggle-row{display:flex;align-items:center;justify-content:space-between;}
+.trk{width:46px;height:26px;border-radius:13px;background:rgba(248,113,113,.18);
+  border:1px solid rgba(248,113,113,.25);position:relative;transition:all .3s;}
+.is-on .trk{background:rgba(52,211,153,.18);border-color:rgba(52,211,153,.35);}
+.tthumb{position:absolute;top:4px;left:4px;width:16px;height:16px;border-radius:50%;
+  background:var(--off);transition:all .3s cubic-bezier(.34,1.56,.64,1);box-shadow:0 0 8px var(--off);}
+.is-on .tthumb{left:24px;background:var(--on);box-shadow:0 0 8px var(--on);}
+.pico{font-size:13px;color:var(--muted);}
+.is-on .pico{color:var(--on);}
+
+.device-card:nth-child(1){animation-delay:.05s}
+.device-card:nth-child(2){animation-delay:.10s}
+.device-card:nth-child(3){animation-delay:.15s}
+.device-card:nth-child(4){animation-delay:.20s}
+.device-card:nth-child(5){animation-delay:.25s}
+
+.actions{margin-top:36px;display:flex;gap:14px;flex-wrap:wrap;}
+.btn{padding:13px 30px;border:1px solid var(--border);background:var(--surface);color:var(--text);
+  border-radius:12px;font-family:'Syne',sans-serif;font-size:11px;letter-spacing:2px;cursor:pointer;transition:all .3s;}
+.btn:hover{transform:translateY(-2px);}
+.btn-on:hover{border-color:var(--on);color:var(--on);background:rgba(52,211,153,.06);}
+.btn-off:hover{border-color:var(--off);color:var(--off);background:rgba(248,113,113,.06);}
+
+/* ── LISTENING POPUP — BOTTOM RIGHT ── */
+#lpop{
+  position:fixed;bottom:24px;right:24px;left:auto;z-index:1000;
+  background:rgba(9,14,22,.97);border:1px solid rgba(56,189,248,.3);border-radius:18px;
+  padding:14px 18px;display:flex;align-items:center;gap:12px;
+  backdrop-filter:blur(24px);box-shadow:0 8px 40px rgba(0,0,0,.5),0 0 24px rgba(56,189,248,.08);
+  transform:translateY(90px);opacity:0;transition:all .4s cubic-bezier(.34,1.56,.64,1);
+  pointer-events:none;min-width:220px;}
+#lpop.show{transform:translateY(0);opacity:1;}
+
+.mring{width:40px;height:40px;border-radius:50%;background:rgba(56,189,248,.08);
+  border:1px solid rgba(56,189,248,.3);display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;position:relative;}
+.mring svg{width:18px;height:18px;}
+.mring::before,.mring::after{content:'';position:absolute;border-radius:50%;
+  border:1px solid rgba(56,189,248,.2);animation:ripple 1.6s ease-out infinite;}
+.mring::before{inset:-6px;}
+.mring::after{inset:-13px;animation-delay:.4s;}
+.ptitle{font-family:'Syne',sans-serif;font-size:11px;letter-spacing:2px;color:var(--accent);}
+.psub{font-size:12px;color:var(--muted);margin-top:2px;}
+.bars{display:flex;align-items:center;gap:3px;height:22px;}
+.bar{width:3px;background:var(--accent);border-radius:3px;animation:barUp 1s ease-in-out infinite;}
+.bar:nth-child(1){animation-delay:0s;height:6px}.bar:nth-child(2){animation-delay:.12s;height:12px}
+.bar:nth-child(3){animation-delay:.24s;height:20px}.bar:nth-child(4){animation-delay:.12s;height:12px}
+.bar:nth-child(5){animation-delay:0s;height:6px}
+
+/* ── TOASTS — BOTTOM RIGHT, ABOVE LISTENING ── */
+#toasts{
+  position:fixed;bottom:88px;right:24px;left:auto;z-index:999;
+  display:flex;flex-direction:column;gap:8px;pointer-events:none;
+  align-items:flex-end;}
+
+.toast{
+  background:rgba(9,14,22,.97);border-radius:14px;padding:13px 16px;
+  display:flex;align-items:center;gap:12px;backdrop-filter:blur(20px);
+  box-shadow:0 8px 30px rgba(0,0,0,.5);
+  transform:translateX(130%);
+  transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .3s;
+  opacity:0;min-width:220px;}
+.toast.show{transform:translateX(0);opacity:1;}
+.ton{border:1px solid rgba(52,211,153,.22);}
+.toff{border:1px solid rgba(248,113,113,.22);}
+.tico{font-size:20px;width:28px;text-align:center;}
+.tname{font-family:'Syne',sans-serif;font-size:12px;letter-spacing:1px;font-weight:700;}
+.tstate{font-size:11px;margin-top:2px;}
+.tstate.on{color:var(--on)}.tstate.off{color:var(--off);}
+
+/* ════ DEVICE ILLUSTRATIONS ════ */
+
+/* FAN */
+.fan-wrap{position:relative;width:88px;height:88px;}
+.fan-blades{position:absolute;inset:0;}
+.is-on .fan-blades{animation:spin 1.2s linear infinite;}
+.fblade{position:absolute;top:50%;left:50%;width:38px;height:13px;
+  background:linear-gradient(90deg,#334155,#1e2d3d);border-radius:12px 3px 12px 3px;
+  transform-origin:5px 6.5px;border:1px solid #3d5166;}
+.fb1{transform:rotate(0deg) translateY(-6.5px);}
+.fb2{transform:rotate(90deg) translateY(-6.5px);}
+.fb3{transform:rotate(180deg) translateY(-6.5px);}
+.fb4{transform:rotate(270deg) translateY(-6.5px);}
+.fan-hub{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:18px;height:18px;background:#253447;border-radius:50%;z-index:3;
+  border:2px solid #3d5166;box-shadow:inset 0 1px 3px rgba(0,0,0,.5);}
+.fan-pole{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:4px;height:12px;background:#1e2d3d;border-radius:2px;}
+.fan-base{position:absolute;bottom:-2px;left:50%;transform:translateX(-50%);width:26px;height:6px;background:#1e2d3d;border-radius:3px;border:1px solid #334155;}
+.is-on .fblade{background:linear-gradient(90deg,#0ea5e9,#0284c7);border-color:#38bdf8;}
+.is-on .fan-hub{background:#075985;border-color:#0ea5e9;box-shadow:0 0 12px rgba(14,165,233,.5);}
+
+/* BULB */
+.bulb-wrap{position:relative;width:64px;height:94px;}
+.bglow{position:absolute;top:-8px;left:50%;transform:translateX(-50%);width:80px;height:80px;
+  background:radial-gradient(circle,rgba(251,191,36,0),transparent);transition:background .5s;border-radius:50%;}
+.is-on .bglow{background:radial-gradient(circle,rgba(251,191,36,.3),transparent 70%);}
+.bglobe{position:absolute;top:4px;left:50%;transform:translateX(-50%);width:52px;height:54px;
+  background:#1a2535;border-radius:50% 50% 35% 35%;border:2px solid #283547;overflow:hidden;transition:all .5s;}
+.binner{position:absolute;inset:5px;border-radius:50% 50% 30% 30%;background:#111e2d;transition:background .5s;}
+.bfil{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:22px;}
+.bfil-l{height:2px;background:#2d4056;border-radius:1px;margin:2.5px 0;transition:background .4s;}
+.bfil-l:nth-child(2){width:80%;margin:2.5px auto;}
+.bbase{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:32px;}
+.bbase-r{height:5px;background:#253447;border-left:2px solid #283547;border-right:2px solid #283547;transition:background .3s;}
+.bbase-r:first-child{border-radius:0;}
+.bbase-end{width:26px;height:8px;background:#1a2535;border-radius:0 0 5px 5px;
+  border:2px solid #283547;border-top:none;margin:0 auto;}
+.is-on .bglobe{background:#fef9c3;border-color:#fbbf24;box-shadow:0 0 28px rgba(251,191,36,.55),inset 0 0 18px rgba(251,191,36,.25);}
+.is-on .binner{background:#fef3c7;}
+.is-on .bfil-l{background:#d97706;}
+.is-on .bbase-r{background:#475569;}
+
+/* AC */
+.ac-wrap{position:relative;width:112px;height:70px;}
+.ac-body{width:112px;height:56px;background:#1a2535;border-radius:10px;border:2px solid #283547;position:relative;overflow:hidden;}
+.ac-face{position:absolute;inset:0;background:linear-gradient(180deg,#1a2535,#152030);}
+.ac-brand{position:absolute;top:9px;left:11px;font-family:'Syne',sans-serif;font-size:8px;letter-spacing:2px;color:#334155;font-weight:700;}
+.ac-dots{position:absolute;top:9px;right:10px;display:flex;gap:4px;}
+.acdot{width:5px;height:5px;border-radius:50%;background:#1e3040;}
+.is-on .acdot:nth-child(1){background:#34d399;box-shadow:0 0 6px #34d399;}
+.is-on .acdot:nth-child(2){background:#38bdf8;box-shadow:0 0 6px #38bdf8;}
+.ac-temp{position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  font-family:'Syne',sans-serif;font-size:11px;color:#1e3040;letter-spacing:1px;transition:color .3s;}
+.is-on .ac-temp{color:#38bdf8;}
+.ac-vent-area{position:absolute;bottom:0;left:0;right:0;height:24px;background:#111e2d;border-top:2px solid #283547;
+  display:flex;align-items:center;gap:3px;padding:0 10px;}
+.avbar{flex:1;height:5px;background:#1e2d3d;border-radius:2px;transition:background .3s;}
+.is-on .avbar{background:#0369a1;animation:ventWave 2s ease-in-out infinite;}
+.is-on .avbar:nth-child(2){animation-delay:.15s}.is-on .avbar:nth-child(3){animation-delay:.3s}
+.is-on .avbar:nth-child(4){animation-delay:.45s}.is-on .avbar:nth-child(5){animation-delay:.6s}
+.ac-air{position:absolute;bottom:-14px;left:0;right:0;height:12px;display:flex;gap:5px;padding:0 14px;opacity:0;transition:opacity .4s;}
+.is-on .ac-air{opacity:1;}
+.airl{flex:1;height:2px;background:linear-gradient(90deg,rgba(56,189,248,.7),transparent);border-radius:1px;animation:airFlow 1.3s ease-in-out infinite;}
+.airl:nth-child(2){animation-delay:.2s}.airl:nth-child(3){animation-delay:.4s}.airl:nth-child(4){animation-delay:.6s}
+.is-on .ac-body{border-color:#0ea5e9;box-shadow:0 0 18px rgba(14,165,233,.15);}
+
+/* TV */
+.tv-wrap{position:relative;width:112px;height:88px;}
+.tv-frame{width:112px;height:68px;background:#111a26;border-radius:8px;border:3px solid #253447;position:relative;overflow:hidden;}
+.tv-inner{position:absolute;inset:4px;background:#0a1120;border-radius:4px;overflow:hidden;}
+.tv-scanline{position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,.12) 3px,rgba(0,0,0,.12) 4px);}
+.tv-cross{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;transition:opacity .4s;}
+.tv-cross-h{position:absolute;width:20px;height:2px;background:#1e3040;border-radius:1px;}
+.tv-cross-v{position:absolute;width:2px;height:20px;background:#1e3040;border-radius:1px;}
+.tv-gbar{position:absolute;bottom:0;left:0;right:0;height:3px;
+  background:linear-gradient(90deg,#6366f1,#8b5cf6,#ec4899,#f59e0b,#10b981,#6366f1);
+  background-size:200%;opacity:0;transition:opacity .4s;animation:cshift 3s linear infinite;}
+.is-on .tv-gbar{opacity:1;}
+.is-on .tv-cross{opacity:0;}
+.tv-leds{position:absolute;top:7px;right:9px;display:flex;gap:3px;}
+.tvled{width:4px;height:4px;border-radius:50%;background:#1a2535;}
+.is-on .tvled:nth-child(1){background:#f87171;box-shadow:0 0 5px #f87171;}
+.is-on .tvled:nth-child(2){background:#34d399;box-shadow:0 0 5px #34d399;}
+.tv-shine{position:absolute;top:0;left:0;right:0;height:30%;
+  background:linear-gradient(180deg,rgba(255,255,255,.03),transparent);pointer-events:none;}
+.tv-neck{position:absolute;bottom:6px;left:50%;transform:translateX(-50%);width:4px;height:8px;background:#1a2535;}
+.tv-foot1,.tv-foot2{position:absolute;bottom:0;height:6px;width:14px;background:#1a2535;border-radius:0 0 4px 4px;border:1px solid #253447;}
+.tv-foot1{left:20px;}.tv-foot2{right:20px;}
+.is-on .tv-frame{border-color:#6366f1;box-shadow:0 0 20px rgba(99,102,241,.2);}
+
+/* FRIDGE */
+.fridge-wrap{position:relative;width:74px;height:104px;}
+.fb{width:74px;height:104px;background:#162030;border-radius:12px 12px 8px 8px;border:2px solid #243040;position:relative;overflow:hidden;}
+.ftop{height:40px;border-bottom:2px solid #243040;position:relative;}
+.fbot{height:60px;position:relative;}
+.fh{position:absolute;right:9px;top:50%;transform:translateY(-50%);
+  width:5px;border-radius:3px;background:#2d4056;border:1px solid #3d5570;}
+.fh.top{height:15px;}.fh.bot{height:22px;}
+.fled{position:absolute;top:8px;left:9px;width:6px;height:6px;border-radius:50%;background:#111e2d;}
+.is-on .fled{background:#34d399;box-shadow:0 0 8px #34d399;}
+.ffrost{position:absolute;inset:3px;border-radius:4px;background:rgba(56,189,248,0);transition:background .6s;}
+.is-on .ffrost{background:rgba(56,189,248,.04);}
+.fshine{position:absolute;top:0;left:8px;right:8px;height:50%;
+  background:linear-gradient(180deg,rgba(255,255,255,.03),transparent);border-radius:4px;}
+.fbot-shelf{position:absolute;top:14px;left:6px;right:6px;height:1px;background:#243040;}
+.fbot-shelf2{position:absolute;top:28px;left:6px;right:6px;height:1px;background:#243040;}
+.is-on .fb{border-color:#0ea5e9;box-shadow:0 0 16px rgba(14,165,233,.1);}
+
+/* ANIMATIONS */
+@keyframes blink{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.5;transform:scale(.8)}}
+@keyframes ripple{0%{transform:scale(1);opacity:1}100%{transform:scale(2);opacity:0}}
+@keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+@keyframes barUp{0%,100%{transform:scaleY(.3)}50%{transform:scaleY(1)}}
+@keyframes airFlow{0%{transform:translateX(-6px);opacity:0}50%{opacity:1}100%{transform:translateX(6px);opacity:0}}
+@keyframes ventWave{0%,100%{height:5px}50%{height:8px}}
+@keyframes cshift{0%{background-position:0%}100%{background-position:200%}}
+@keyframes popIn{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-mark">🏠</div>
+    <div class="brand"><h1>NOVA</h1><p>SMART HOME</p></div>
+  </div>
+  <div class="hright">
+    <div class="badge-live"><div class="dot-live"></div>LIVE</div>
+    <div id="clock">--:--:--</div>
+  </div>
+</header>
+
+<main>
+  <div class="rl">OVERVIEW</div>
+  <div class="stats">
+    <div class="stat"><div class="stat-n" id="stat-on">0</div><div class="stat-l">DEVICES ON</div></div>
+    <div class="stat"><div class="stat-n" id="stat-off" style="color:var(--muted)">5</div><div class="stat-l">DEVICES OFF</div></div>
+    <div class="stat"><div class="stat-n">5</div><div class="stat-l">TOTAL</div></div>
+  </div>
+  <div class="rl">DEVICES</div>
+  <div class="grid" id="device-grid"></div>
+  <div class="actions">
+    <button class="btn btn-on" onclick="setAll(true)">⚡ ALL ON</button>
+    <button class="btn btn-off" onclick="setAll(false)">⏻ ALL OFF</button>
+  </div>
+</main>
+
+<!-- LISTENING POPUP — BOTTOM RIGHT -->
+<div id="lpop">
+  <div class="mring">
+    <svg viewBox="0 0 24 24" fill="none" stroke="#38bdf8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="9" y="3" width="6" height="11" rx="3"/>
+      <path d="M5 10a7 7 0 0 0 14 0"/>
+      <line x1="12" y1="17" x2="12" y2="21"/>
+      <line x1="8" y1="21" x2="16" y2="21"/>
+    </svg>
+  </div>
+  <div style="flex:1">
+    <div class="ptitle">LISTENING</div>
+    <div class="psub" id="psub">Nova is ready...</div>
+  </div>
+  <div class="bars">
+    <div class="bar"></div><div class="bar"></div><div class="bar"></div>
+    <div class="bar"></div><div class="bar"></div>
+  </div>
+</div>
+
+<!-- TOASTS — BOTTOM RIGHT -->
+<div id="toasts"></div>
+
+<script>
+const META={fan:{label:'FAN',emoji:'🌀'},light:{label:'LIGHT',emoji:'💡'},ac:{label:'AC',emoji:'❄️'},tv:{label:'TV',emoji:'📺'},fridge:{label:'FRIDGE',emoji:'🧊'}};
+
+function fanIllus(){return`<div class="fan-wrap"><div class="fan-blades"><div class="fblade fb1"></div><div class="fblade fb2"></div><div class="fblade fb3"></div><div class="fblade fb4"></div></div><div class="fan-hub"></div><div class="fan-pole"></div><div class="fan-base"></div></div>`;}
+function bulbIllus(){return`<div class="bulb-wrap"><div class="bglow"></div><div class="bglobe"><div class="binner"></div><div class="bfil"><div class="bfil-l"></div><div class="bfil-l"></div><div class="bfil-l"></div></div></div><div class="bbase"><div class="bbase-r" style="height:5px"></div><div class="bbase-r" style="height:5px;margin-top:1px"></div><div class="bbase-end"></div></div></div>`;}
+function acIllus(){return`<div class="ac-wrap"><div class="ac-body"><div class="ac-face"></div><div class="ac-brand">NOVA AC</div><div class="ac-dots"><div class="acdot"></div><div class="acdot"></div></div><div class="ac-temp">24°C</div><div class="ac-vent-area"><div class="avbar"></div><div class="avbar"></div><div class="avbar"></div><div class="avbar"></div><div class="avbar"></div></div></div><div class="ac-air"><div class="airl"></div><div class="airl"></div><div class="airl"></div><div class="airl"></div></div></div>`;}
+function tvIllus(){return`<div class="tv-wrap"><div class="tv-frame"><div class="tv-inner"><div class="tv-scanline"></div><div class="tv-cross"><div class="tv-cross-h"></div><div class="tv-cross-v"></div></div><div class="tv-gbar"></div><div class="tv-shine"></div></div><div class="tv-leds"><div class="tvled"></div><div class="tvled"></div></div></div><div class="tv-neck"></div><div class="tv-foot1"></div><div class="tv-foot2"></div></div>`;}
+function fridgeIllus(){return`<div class="fridge-wrap"><div class="fb"><div class="ftop"><div class="fled"></div><div class="fh top"></div><div class="ffrost"></div><div class="fshine"></div></div><div class="fbot"><div class="fh bot"></div><div class="ffrost"></div><div class="fbot-shelf"></div><div class="fbot-shelf2"></div></div></div></div>`;}
+
+const ILLUS={fan:fanIllus,light:bulbIllus,ac:acIllus,tv:tvIllus,fridge:fridgeIllus};
+let states={},prev={},inited=false;
+
+function clock(){document.getElementById('clock').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false});}
+setInterval(clock,1000);clock();
+
+function buildCard(dev,on){
+  const m=META[dev],c=document.createElement('div');
+  c.className=`device-card ${on?'is-on':''}`;
+  c.id=`card-${dev}`;c.onclick=()=>toggle(dev);
+  c.innerHTML=`<div class="card-top"><div class="device-name">${m.label}</div><div class="spill">${on?'ON':'OFF'}</div></div><div class="illus">${ILLUS[dev]()}</div><div class="toggle-row"><span class="pico">⏻</span><div class="trk"><div class="tthumb"></div></div></div>`;
+  return c;
+}
+
+function render(s){
+  const grid=document.getElementById('device-grid'),devs=Object.keys(META);
+  if(!inited){grid.innerHTML='';devs.forEach(d=>grid.appendChild(buildCard(d,s[d]||false)));inited=true;}
+  else{devs.forEach(d=>{const on=s[d]||false,card=document.getElementById(`card-${d}`);if(!card)return;const was=card.classList.contains('is-on');if(was!==on&&prev[d]!==undefined)toast(d,on);const nc=buildCard(d,on);card.className=nc.className;card.innerHTML=nc.innerHTML;card.style.animation='none';});}
+  const n=Object.values(s).filter(Boolean).length;
+  document.getElementById('stat-on').textContent=n;
+  document.getElementById('stat-off').textContent=devs.length-n;
+  prev={...s};
+}
+
+async function toggle(dev){const ns=!states[dev];try{await fetch('/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:dev,state:ns})});}catch(e){}states[dev]=ns;render(states);}
+async function setAll(s){for(const d of Object.keys(META)){try{await fetch('/update',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({device:d,state:s})});}catch(e){}states[d]=s;}render(states);}
+async function poll(){try{const r=await fetch('/status');states=await r.json();render(states);}catch(e){if(!inited){Object.keys(META).forEach(d=>states[d]=false);render(states);}}}
+poll();setInterval(poll,1500);
+
+async function pollNova(){
+  try{
+    const r=await fetch('/nova-status',{signal:AbortSignal.timeout(900)});
+    const d=await r.json();
+    const p=document.getElementById('lpop');
+    if(d.listening){document.getElementById('psub').textContent='Say a command...';p.classList.add('show');}
+    else p.classList.remove('show');
+  }catch(e){document.getElementById('lpop').classList.remove('show');}
+}
+setInterval(pollNova,1000);
+
+function toast(dev,on){
+  const m=META[dev]||{emoji:'🔌',label:dev.toUpperCase()};
+  const c=document.getElementById('toasts');
+  const t=document.createElement('div');
+  t.className=`toast ${on?'ton':'toff'}`;
+  t.innerHTML=`<div class="tico">${m.emoji}</div><div><div class="tname">${m.label}</div><div class="tstate ${on?'on':'off'}">${on?'✔ Turned ON':'✖ Turned OFF'}</div></div>`;
+  c.appendChild(t);
+  requestAnimationFrame(()=>requestAnimationFrame(()=>t.classList.add('show')));
+  setTimeout(()=>{t.classList.remove('show');setTimeout(()=>t.remove(),400);},3000);
+}
+</script>
+</body>
+</html>
